@@ -52,7 +52,16 @@ th{background:#eee8dc}
 </main>
 <script>
 const KEY='lhm_newspaper_catalog_v1';
-let items=JSON.parse(localStorage.getItem(KEY)||'[]');
+let items=[
+{catalog:"LHM-NEWS-ADW-2026-08-01",paper:"Aberdeen Daily World",date:"2026-08-01",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2026-08-06",paper:"Aberdeen Daily World",date:"2026-08-06",issue:"Thursday Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2025-12-20",paper:"Aberdeen Daily World",date:"2025-12-20",issue:"Sports Section",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2025-12-13",paper:"Aberdeen Daily World",date:"2025-12-13",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2023-05-12",paper:"Aberdeen Daily World",date:"2023-12-05",issue:"Page A3",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2026-11-07",paper:"Aberdeen Daily World",date:"2026-07-11",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2026-30-05",paper:"Aberdeen Daily World",date:"2026-05-30",issue:"",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
+{catalog:"LHM-NEWS-ADW-2026-19-04",paper:"Aberdeen Daily World",date:"2026-04-19",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""}
+];
 
 function val(id){return document.getElementById(id).value.trim()}
 function render(){
