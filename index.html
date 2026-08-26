@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaLonde Historical Museum — Newspaper Catalog</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f3f0e8;color:#29251f}
+header{background:#314d38;color:#fff;padding:22px 28px}
+header h1{margin:0;font-family:Georgia,serif}
+header p{margin:6px 0 0}
+main{max-width:1200px;margin:24px auto;padding:0 18px}
+.card{background:#fff;border:1px solid #d5cec0;border-radius:10px;padding:18px;margin-bottom:18px;box-shadow:0 2px 7px #00000012}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+label{font-weight:bold;font-size:13px}
+input,select,textarea{width:100%;box-sizing:border-box;padding:9px;margin-top:5px;border:1px solid #bdb5a7;border-radius:6px;background:#fff}
+textarea{min-height:70px}
+button{border:0;border-radius:6px;padding:10px 14px;margin:6px 4px 0 0;cursor:pointer;font-weight:bold}
+.primary{background:#314d38;color:white}.secondary{background:#e3ded3}.danger{background:#9b3d32;color:white}
+.stats{display:flex;gap:12px;flex-wrap:wrap}.stat{background:#eee8dc;padding:12px 18px;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid #ddd5c7;padding:9px;text-align:left;vertical-align:top}
+th{background:#eee8dc}
+.actions button{padding:6px 8px;font-size:12px}
+#search{max-width:500px}
+.small{font-size:12px;color:#665f55}
+.hidden{display:none}
+.view-only .no-print{display:none!important}
+@media print{header,.no-print,.actions{display:none!important} body{background:white}.card{box-shadow:none;border:0}}
+</style>
+</head>
+<body class="view-only">
+<header>
+<h1>LaLonde Historical Museum</h1>
+<p>Newspaper Catalog — Public View</p>
+</header>
+<main>
+<div class="card no-print">
+<h2>Search Catalog</h2>
+<input id="search" oninput="render()" placeholder="Search catalog number, newspaper, date, cabinet, drawer, notes...">
+<div class="stats" id="stats"></div>
+<p class="small">Browse the LaLonde Historical Museum's newspaper collection.</p>
+</div>
+
+<div class="card">
+<h2>Newspaper Collection</h2>
+<table>
+<thead><tr><th>Catalog #</th><th>Newspaper</th><th>Date</th><th>Location</th><th>Condition</th><th>Scan</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+</main>
+<script>
+const KEY='lhm_newspaper_catalog_v1';
+let items=JSON.parse(localStorage.getItem(KEY)||'[]');
+
+function val(id){return document.getElementById(id).value.trim()}
+function render(){
+ const q=val('search').toLowerCase();
+ const filtered=items.map((x,i)=>({x,i})).filter(o=>Object.values(o.x).join(' ').toLowerCase().includes(q));
+ document.getElementById('rows').innerHTML=filtered.map(o=>{
+  const x=o.x;
+  return `<tr><td><b>${esc(x.catalog)}</b>${x.issue?'<br><span class="small">Issue '+esc(x.issue)+'</span>':''}</td>
+  <td>${esc(x.paper)}</td><td>${esc(x.date)}</td><td>Cabinet ${esc(x.cabinet)}<br>Drawer ${esc(x.drawer)}</td>
+  <td>${esc(x.condition)}</td><td>${esc(x.scan)}</td></tr>`
+ }).join('') || '<tr><td colspan="6">No newspapers found.</td></tr>';
+ const papers=new Set(items.map(x=>x.paper).filter(Boolean)).size;
+ document.getElementById('stats').innerHTML=`<div class="stat"><b>${items.length}</b><br>Total Issues</div><div class="stat"><b>${papers}</b><br>Newspapers</div><div class="stat"><b>${items.filter(x=>x.scan==='Yes').length}</b><br>Scanned</div>`;
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+render();
+</script>
+</body></html>
