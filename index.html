@@ -45,7 +45,7 @@ th{background:#eee8dc}
 <div class="card">
 <h2>Newspaper Collection</h2>
 <table>
-<thead><tr><th>Catalog #</th><th>Newspaper</th><th>Date</th><th>Location</th><th>Condition</th><th>Scan</th></tr></thead>
+<thead><tr><th>Catalog #</th><th>Newspaper</th><th>Date</th><th>Location</th><th>Condition</th><th>Scan</th><th class="small">Notes</th></tr></thead>
 <tbody id="rows"></tbody>
 </table>
 </div>
@@ -53,14 +53,160 @@ th{background:#eee8dc}
 <script>
 const KEY='lhm_newspaper_catalog_v1';
 let items=[
-{catalog:"LHM-NEWS-ADW-2026-08-01",paper:"Aberdeen Daily World",date:"2026-08-01",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2026-08-06",paper:"Aberdeen Daily World",date:"2026-08-06",issue:"Thursday Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2025-12-20",paper:"Aberdeen Daily World",date:"2025-12-20",issue:"Sports Section",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2025-12-13",paper:"Aberdeen Daily World",date:"2025-12-13",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2023-05-12",paper:"Aberdeen Daily World",date:"2023-12-05",issue:"Page A3",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2026-11-07",paper:"Aberdeen Daily World",date:"2026-07-11",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2026-30-05",paper:"Aberdeen Daily World",date:"2026-05-30",issue:"",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""},
-{catalog:"LHM-NEWS-ADW-2026-19-04",paper:"Aberdeen Daily World",date:"2026-04-19",issue:"Weekend Edition",cabinet:"1",drawer:"3",condition:"Excellent",scan:"No",notes:""}
+  {
+    "catalog": "LHM-NEWS-ADW-2026-08-01",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-08-01",
+    "issue": "weekend edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": "front page Headline Foovana Features Bassist Krist Novoselic"
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-08-06",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-08-06",
+    "issue": "Thursday Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": "Headline \"Communities turn out for National Night Out events\""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2025-12-20",
+    "paper": "Aberdeen Daily World",
+    "date": "0025-12-20",
+    "issue": "Sports Section",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2025-12-13",
+    "paper": "Aberdeen Daily World",
+    "date": "2025-12-13",
+    "issue": "Weekend Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2023-05-12",
+    "paper": "Aberdeen Daily World",
+    "date": "2023-12-05",
+    "issue": "Page A3",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-11-07",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-07-11",
+    "issue": "Weekend Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-30-05",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-05-30",
+    "issue": "",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-19-04",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-04-19",
+    "issue": "weekend edtion",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-03-05",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-05-03",
+    "issue": "Weekend Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-206-03-01",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-01-03",
+    "issue": "Weekend Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2025-13-11",
+    "paper": "Aberdeen Daily World",
+    "date": "2025-11-13",
+    "issue": "Thursday Edtion",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-21-04",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-04-21",
+    "issue": "Tuesday Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-ADW-2026-28-01",
+    "paper": "Aberdeen Daily World",
+    "date": "2026-01-28",
+    "issue": "Section B of Wednsday's Edition",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  },
+  {
+    "catalog": "LHM-NEWS-OLY-2026-13-03",
+    "paper": "The Olympian",
+    "date": "2026-03-13",
+    "issue": "Volume 136 No.343",
+    "cabinet": "1",
+    "drawer": "3",
+    "condition": "Excellent",
+    "scan": "No",
+    "notes": ""
+  }
 ];
 
 function val(id){return document.getElementById(id).value.trim()}
@@ -71,8 +217,8 @@ function render(){
   const x=o.x;
   return `<tr><td><b>${esc(x.catalog)}</b>${x.issue?'<br><span class="small">Issue '+esc(x.issue)+'</span>':''}</td>
   <td>${esc(x.paper)}</td><td>${esc(x.date)}</td><td>Cabinet ${esc(x.cabinet)}<br>Drawer ${esc(x.drawer)}</td>
-  <td>${esc(x.condition)}</td><td>${esc(x.scan)}</td></tr>`
- }).join('') || '<tr><td colspan="6">No newspapers found.</td></tr>';
+  <td>${esc(x.condition)}</td><td>${esc(x.scan)}</td><td class="small">${esc(x.notes)}</td></tr>`
+ }).join('') || '<tr><td colspan="7">No newspapers found.</td></tr>';
  const papers=new Set(items.map(x=>x.paper).filter(Boolean)).size;
  document.getElementById('stats').innerHTML=`<div class="stat"><b>${items.length}</b><br>Total Issues</div><div class="stat"><b>${papers}</b><br>Newspapers</div><div class="stat"><b>${items.filter(x=>x.scan==='Yes').length}</b><br>Scanned</div>`;
 }
