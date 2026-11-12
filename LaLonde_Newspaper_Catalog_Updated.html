@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaLonde Historical Museum — Newspaper Catalog</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f3f0e8;color:#29251f}
+header{background:#314d38;color:#fff;padding:22px 28px}
+header h1{margin:0;font-family:Georgia,serif}
+header p{margin:6px 0 0}
+main{max-width:1200px;margin:24px auto;padding:0 18px}
+.card{background:#fff;border:1px solid #d5cec0;border-radius:10px;padding:18px;margin-bottom:18px;box-shadow:0 2px 7px #00000012}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+label{font-weight:bold;font-size:13px}
+input,select,textarea{width:100%;box-sizing:border-box;padding:9px;margin-top:5px;border:1px solid #bdb5a7;border-radius:6px;background:#fff}
+textarea{min-height:70px}
+button{border:0;border-radius:6px;padding:10px 14px;margin:6px 4px 0 0;cursor:pointer;font-weight:bold}
+.primary{background:#314d38;color:white}.secondary{background:#e3ded3}.danger{background:#9b3d32;color:white}
+.stats{display:flex;gap:12px;flex-wrap:wrap}.stat{background:#eee8dc;padding:12px 18px;border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid #ddd5c7;padding:9px;text-align:left;vertical-align:top}
+th{background:#eee8dc}
+.actions button{padding:6px 8px;font-size:12px}
+#search{max-width:500px}
+.small{font-size:12px;color:#665f55}
+.hidden{display:none}
+@media print{header,.no-print,.actions{display:none!important} body{background:white}.card{box-shadow:none;border:0}}
+</style>
+</head>
+<body>
+<header>
+<h1>LaLonde Historical Museum</h1>
+<p>Newspaper Catalog — Offline Edition</p>
+</header>
+<main>
+<div class="card no-print">
+<h2 id="formTitle">Add Newspaper Issue</h2>
+<div class="grid">
+<div><label>Catalog Number</label><input id="catalog" placeholder="LHM-NEWS-ADW-1947-03-14"></div>
+<div><label>Item Type / Newspaper Name</label><input id="paper" placeholder="Clipping, Full Newspaper, or newspaper name"></div>
+<div><label>Date / Year</label><input id="date" type="text" placeholder="e.g. Oct 2011 or Year unknown"></div>
+<div><label>Edition / Issue No.</label><input id="issue"></div>
+<div><label>Cabinet</label><input id="cabinet" placeholder="1"></div>
+<div><label>Drawer</label><input id="drawer" placeholder="2"></div>
+<div><label>Condition</label><select id="condition"><option>Excellent</option><option>Good</option><option>Fair</option><option>Poor</option><option>Fragile</option></select></div>
+<div><label>Digital Scan</label><select id="scan"><option>Yes</option><option>No</option><option>Partial</option></select></div>
+</div>
+<div style="margin-top:12px"><label>Notes</label><textarea id="notes" placeholder="Articles, people, events, damage, duplicates, etc."></textarea></div>
+<button class="primary" onclick="saveItem()">Save Newspaper</button>
+<button class="secondary" onclick="clearForm()">Clear</button>
+<input type="hidden" id="editIndex" value="">
+</div>
+
+<div class="card no-print">
+<h2>Search Catalog</h2>
+<input id="search" oninput="render()" placeholder="Search catalog number, newspaper, date, cabinet, drawer, notes...">
+<div class="stats" id="stats"></div>
+<div>
+<button class="secondary" onclick="exportCSV()">Export CSV</button>
+<button class="secondary" onclick="backup()">Backup Catalog</button>
+<button class="secondary" onclick="document.getElementById('restore').click()">Restore Backup</button>
+<button class="secondary" onclick="window.print()">Print Catalog</button>
+<input id="restore" class="hidden" type="file" accept=".json" onchange="restore(event)">
+</div>
+<p class="small">Your catalog is stored on this computer in this browser. No internet connection is required.</p>
+</div>
+
+<div class="card">
+<h2>Newspaper Collection</h2>
+<table>
+<thead><tr><th>Catalog #</th><th>Newspaper</th><th>Date</th><th>Location</th><th>Condition</th><th>Scan</th><th class="no-print">Actions</th></tr></thead>
+<tbody id="rows"></tbody>
+</table>
+</div>
+</main>
+<script>
+const KEY='lhm_newspaper_catalog_v1';
+const starterItems = [
+{catalog:'LHM-CLIP-001',paper:'Clipping',date:'Oct 2011',issue:'Photo of Taholah School',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Photograph/event date noted: Oct 17, 1931'},
+{catalog:'LHM-CLIP-002',paper:'Clipping',date:'2018',issue:'Photo of Tribal Members',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Photograph date: 1967'},
+{catalog:'LHM-CLIP-003',paper:'Clipping',date:'Year unknown',issue:'Photo of Veterans at Taholah School',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-004',paper:'Clipping',date:'Year unknown',issue:'Photo of Tribal Members at Centennial Accords',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-005',paper:'Clipping',date:'Year unknown',issue:'Blast from the Past',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Historical date referenced: Oct 27, 1987'},
+{catalog:'LHM-CLIP-006',paper:'Clipping',date:'Year unknown',issue:'Veterans Honored at General Council Meeting',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-007',paper:'Clipping',date:'May 2019',issue:'Photos from Phillip Martin’s Memorial',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-008',paper:'Clipping',date:'Oct 2016',issue:'Snapshots in Time',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-009',paper:'Clipping',date:'Year unknown',issue:'Joe DeLaCruz Honored in Legacy Hall',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-001',paper:'Full Newspaper',date:'Dec 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-010',paper:'Clipping',date:'Nov 2019',issue:'Snapshots in Time',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-011',paper:'Clipping',date:'Year unknown',issue:'First Annual Staff Meeting Since the Start of the Pandemic',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-012',paper:'Clipping',date:'Oct 2020',issue:'Photograph',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-013',paper:'Clipping',date:'July 2019',issue:'In-Field Wetland Training',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-014',paper:'Clipping',date:'Mar 2020',issue:'Billy Nye Visits the Tribe',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Name retained as supplied.'},
+{catalog:'LHM-CLIP-015',paper:'Clipping',date:'Sep 2018',issue:'Highlights',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-016',paper:'Clipping',date:'Feb 2023',issue:'Francis Rosander Interview',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-017',paper:'Clipping',date:'Oct 2022',issue:'Ribbon Cutting — Part 1',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Part 1 of 3'},
+{catalog:'LHM-CLIP-018',paper:'Clipping',date:'Oct 2022',issue:'Ribbon Cutting — Part 2',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Part 2 of 3'},
+{catalog:'LHM-CLIP-019',paper:'Clipping',date:'Oct 2022',issue:'Ribbon Cutting — Part 3',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Part 3 of 3'},
+{catalog:'LHM-CLIP-020',paper:'Clipping',date:'Year unknown',issue:'1954 Moclips Basketball Team',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Photograph/event year: 1954'},
+{catalog:'LHM-CLIP-021',paper:'Clipping',date:'Nov 2018',issue:'Veterans',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-022',paper:'Clipping',date:'Year unknown',issue:'Brownies',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-023',paper:'Clipping',date:'Year unknown',issue:'Senator John McCain',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-024',paper:'Clipping',date:'Year unknown',issue:'QDNR Honors Long-Time Employees',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-025',paper:'Clipping',date:'Jan 2013',issue:'Birthdays and Anniversaries',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-026',paper:'Clipping',date:'Year unknown',issue:'Joe DeLaCruz and Smokey the Bear',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Photograph/event year: 1984'},
+{catalog:'LHM-CLIP-027',paper:'Clipping',date:'Year unknown',issue:'Blast from the Past',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-028',paper:'Clipping',date:'Year unknown',issue:'Seattle Joins in Celebration of Joe DeLaCruz Day',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-029',paper:'Clipping',date:'Year unknown',issue:'Andrus',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Title/name entered as supplied.'},
+{catalog:'LHM-CLIP-030',paper:'Clipping',date:'May 2023',issue:'Lambs',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-031',paper:'Clipping',date:'Dec 2010',issue:'Birthdays and Anniversaries',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-032',paper:'Clipping',date:'Year unknown',issue:'Joe DeLaCruz Article',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'One of three separately listed Joe DeLaCruz article clippings.'},
+{catalog:'LHM-CLIP-033',paper:'Clipping',date:'Year unknown',issue:'Joe DeLaCruz Article',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'One of three separately listed Joe DeLaCruz article clippings.'},
+{catalog:'LHM-CLIP-034',paper:'Clipping',date:'Year unknown',issue:'Joe DeLaCruz Article',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'One of three separately listed Joe DeLaCruz article clippings.'},
+{catalog:'LHM-CLIP-035',paper:'Clipping',date:'Year unknown',issue:'Joe DeLaCruz Hall of Fame',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-002',paper:'Full Newspaper',date:'Dec 2017',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-003',paper:'Full Newspaper',date:'Jul 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-004',paper:'Full Newspaper',date:'Apr/May 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-005',paper:'Full Newspaper',date:'Jun 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-006',paper:'Full Newspaper',date:'Jan 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-036',paper:'Clipping',date:'Oct 2023',issue:'Block Party Sale Impacts on Queets Village',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-037',paper:'Clipping',date:'Year unknown',issue:'Kurtis Christmas Singing',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-007',paper:'Full Newspaper',date:'Feb 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-038',paper:'Clipping',date:'Jul 2023',issue:'John Wayne and the Quinaults',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-039',paper:'Clipping',date:'May 2012',issue:'Birthdays and Anniversaries',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-040',paper:'Clipping',date:'Nov 2019',issue:'Veterans',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-041',paper:'Clipping',date:'Nov 2020',issue:'Highlights from Quinault Operations and QIN Divisions',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-042',paper:'Clipping',date:'Nov 2020',issue:'Vets',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-PAGE-001',paper:'Full Page',date:'Aug 2011',issue:'Taholah Days',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-BOOK-001',paper:'Full 2nd Booklet',date:'Nov 2022',issue:'Miscellaneous Articles',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Second booklet, as identified in supplied list.'},
+{catalog:'LHM-NEWS-008',paper:'Full Newspaper',date:'Aug 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-009',paper:'Full Newspaper',date:'Sep 2022',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-043',paper:'Clipping',date:'Year unknown',issue:'Blast from the Past',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Original supplied wording had a typo: "bast from the past".'},
+{catalog:'LHM-CLIP-044',paper:'Clipping',date:'Jan 2013',issue:'Dick Retirement from Congress',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-045',paper:'Clipping',date:'Jun 2014',issue:'Remembering Billy Frank Jr.',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-046',paper:'Clipping',date:'May 2012',issue:'Round House Given Historical Status',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-PAGE-002',paper:'Single Page',date:'Sep 2016',issue:'Single page; no article title supplied',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-010',paper:'Full Newspaper',date:'Mar 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-011',paper:'Full Newspaper',date:'Aug 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-012',paper:'Full Newspaper',date:'Jul 2015',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-013',paper:'Full Newspaper',date:'Jan 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-014',paper:'Full Newspaper',date:'Mar 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-015',paper:'Full Newspaper',date:'Apr 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-016',paper:'Full Newspaper',date:'Mar 2015',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-017',paper:'Full Newspaper',date:'Jun 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-018',paper:'Full Newspaper',date:'Feb 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-019',paper:'Full Newspaper',date:'Feb 2015',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Date supplied as “Feb 201” with encoded final digit 5.'},
+{catalog:'LHM-NEWS-020',paper:'Full Newspaper',date:'Nov 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-021',paper:'Full Newspaper',date:'May 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-022',paper:'Full Newspaper',date:'Nov 2006',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-023',paper:'Full Newspaper',date:'Oct 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-024',paper:'Full Newspaper',date:'Sep 2011',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-025',paper:'Full Newspaper',date:'Feb 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-026',paper:'Full Newspaper',date:'Mar 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-027',paper:'Full Newspaper',date:'Jun 1999',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-028',paper:'Full Newspaper',date:'May 1999',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-029',paper:'Full Newspaper',date:'Jan 2022',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-030',paper:'Full Newspaper',date:'Mar 2022',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-031',paper:'Full Newspaper',date:'Jan 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-032',paper:'Full Newspaper',date:'Jul 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-033',paper:'Full Newspaper',date:'Jun 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-034',paper:'Full Newspaper',date:'Aug 2024',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-CLIP-047',paper:'Clipping',date:'Nov 2023',issue:'DeLaCruz Hall of Fame',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-035',paper:'Full Newspaper',date:'Aug 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-036',paper:'Full Newspaper',date:'Sep 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-037',paper:'Full Newspaper',date:'Jul 2010',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-038',paper:'Full Newspaper',date:'Jun 2023',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-039',paper:'Full Newspaper',date:'Oct 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-040',paper:'Full Newspaper',date:'May/Jun 2020',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-041',paper:'Full Newspaper',date:'Mar 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-042',paper:'Full Newspaper',date:'May 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-043',paper:'Full Newspaper',date:'Feb 2020',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-044',paper:'Full Newspaper',date:'Jan 2020',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-045',paper:'Full Newspaper',date:'Mar 2018',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-046',paper:'Full Newspaper',date:'Mar 2022',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-047',paper:'Full Newspaper',date:'Aug 2022',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-048',paper:'Full Newspaper',date:'Jul 2022',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-049',paper:'Full Newspaper',date:'Feb 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-050',paper:'Full Newspaper',date:'Apr 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-051',paper:'Full Newspaper',date:'Sep 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-052',paper:'Full Newspaper',date:'Aug 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-053',paper:'Full Newspaper',date:'Apr 2021',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-054',paper:'Full Newspaper',date:'Jun 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-055',paper:'Full Newspaper',date:'Jun 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-056',paper:'Full Newspaper',date:'Aug 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-057',paper:'Full Newspaper',date:'May 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-058',paper:'Full Newspaper',date:'Sep 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-059',paper:'Full Newspaper',date:'Jul 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-060',paper:'Full Newspaper',date:'Sep 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-061',paper:'Full Newspaper',date:'Sep 2018',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-062',paper:'Full Newspaper',date:'Dec 2018',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-063',paper:'Full Newspaper',date:'Aug 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-064',paper:'Full Newspaper',date:'Sep 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-065',paper:'Full Newspaper',date:'May 2014',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-066',paper:'Full Newspaper',date:'Dec 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-067',paper:'Full Newspaper',date:'Oct 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-068',paper:'Full Newspaper',date:'Sep 2010',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-069',paper:'Full Newspaper',date:'Oct 2010',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-070',paper:'Full Newspaper',date:'Aug 2018',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-071',paper:'Full Newspaper',date:'May 2015',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-072',paper:'Full Newspaper',date:'Oct 2014',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-073',paper:'Full Newspaper',date:'Mar 2014',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-074',paper:'Full Newspaper',date:'Sep 2009',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-075',paper:'Full Newspaper',date:'Jun 2010',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-076',paper:'Full Newspaper',date:'Sep 2012',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-077',paper:'Full Newspaper',date:'Mar 2Mar 2013',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:'Date text retained exactly as supplied (“Mar 2Mar 2013”); please verify.'},
+{catalog:'LHM-NEWS-078',paper:'Full Newspaper',date:'Jul 2018',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-079',paper:'Full Newspaper',date:'Feb 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-080',paper:'Full Newspaper',date:'Jan 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-081',paper:'Full Newspaper',date:'Jun 2018',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-082',paper:'Full Newspaper',date:'Sep 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-083',paper:'Full Newspaper',date:'Jun 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-084',paper:'Full Newspaper',date:'May 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-085',paper:'Full Newspaper',date:'Apr 2019',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''},
+{catalog:'LHM-NEWS-086',paper:'Full Newspaper',date:'Mar 2020',issue:'Complete newspaper issue',cabinet:'',drawer:'',condition:'Good',scan:'No',notes:''}
+];
+let items=JSON.parse(localStorage.getItem(KEY)||'[]');
+// Import these additions once while preserving records already saved in the browser.
+const known = new Set(items.map(x=>x.catalog));
+const additions = starterItems.filter(x=>!known.has(x.catalog));
+if(additions.length){items.push(...additions);localStorage.setItem(KEY,JSON.stringify(items));}
+
+
+function val(id){return document.getElementById(id).value.trim()}
+function saveItem(){
+ const item={catalog:val('catalog'),paper:val('paper'),date:val('date'),issue:val('issue'),
+ cabinet:val('cabinet'),drawer:val('drawer'),condition:val('condition'),scan:val('scan'),notes:val('notes')};
+ if(!item.catalog||!item.paper||!item.date){alert('Please enter at least a Catalog Number, Item Type, and Date / Year.');return}
+ const idx=document.getElementById('editIndex').value;
+ if(idx==='') items.push(item); else items[+idx]=item;
+ localStorage.setItem(KEY,JSON.stringify(items)); clearForm(); render();
+}
+function clearForm(){
+ ['catalog','paper','date','issue','cabinet','drawer','notes'].forEach(x=>document.getElementById(x).value='');
+ document.getElementById('condition').value='Excellent'; document.getElementById('scan').value='Yes';
+ document.getElementById('editIndex').value=''; document.getElementById('formTitle').textContent='Add Newspaper Issue';
+}
+function editItem(i){
+ const x=items[i];
+ ['catalog','paper','date','issue','cabinet','drawer','notes'].forEach(k=>document.getElementById(k).value=x[k]||'');
+ ['condition','scan'].forEach(k=>document.getElementById(k).value=x[k]||'');
+ document.getElementById('editIndex').value=i; document.getElementById('formTitle').textContent='Edit Newspaper Issue';
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function delItem(i){if(confirm('Delete this newspaper record?')){items.splice(i,1);localStorage.setItem(KEY,JSON.stringify(items));render()}}
+function render(){
+ const q=val('search').toLowerCase();
+ const filtered=items.map((x,i)=>({x,i})).filter(o=>Object.values(o.x).join(' ').toLowerCase().includes(q));
+ document.getElementById('rows').innerHTML=filtered.map(o=>{
+  const x=o.x;
+  return `<tr><td><b>${esc(x.catalog)}</b>${x.issue?'<br><span class="small">Issue '+esc(x.issue)+'</span>':''}</td>
+  <td>${esc(x.paper)}</td><td>${esc(x.date)}</td><td>Cabinet ${esc(x.cabinet)}<br>Drawer ${esc(x.drawer)}</td>
+  <td>${esc(x.condition)}</td><td>${esc(x.scan)}</td>
+  <td class="actions no-print"><button class="secondary" onclick="editItem(${o.i})">Edit</button><button class="danger" onclick="delItem(${o.i})">Delete</button></td></tr>`
+ }).join('') || '<tr><td colspan="7">No newspapers found.</td></tr>';
+ const papers=new Set(items.map(x=>x.paper).filter(Boolean)).size;
+ document.getElementById('stats').innerHTML=`<div class="stat"><b>${items.length}</b><br>Total Issues</div><div class="stat"><b>${papers}</b><br>Newspapers</div><div class="stat"><b>${items.filter(x=>x.scan==='Yes').length}</b><br>Scanned</div>`;
+}
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function exportCSV(){
+ const headers=['Catalog Number','Newspaper','Date','Issue','Cabinet','Drawer','Condition','Digital Scan','Notes'];
+ const lines=[headers,...items.map(x=>headers.map((_,i)=>[x.catalog,x.paper,x.date,x.issue,x.cabinet,x.drawer,x.condition,x.scan,x.notes][i]))]
+ .map(r=>r.map(v=>`"${String(v||'').replaceAll('"','""')}"`).join(',')).join('\\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines],{type:'text/csv'}));a.download='LaLonde_Newspaper_Catalog.csv';a.click();
+}
+function backup(){
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(items,null,2)],{type:'application/json'}));a.download='LaLonde_Newspaper_Catalog_Backup.json';a.click();
+}
+function restore(e){
+ const f=e.target.files[0]; if(!f)return;
+ const r=new FileReader(); r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d))throw 0;const byId=new Map(items.map(x=>[x.catalog,x]));d.forEach(x=>{if(!byId.has(x.catalog))items.push(x);else if(!x.catalog)items.push(x)});localStorage.setItem(KEY,JSON.stringify(items));render();alert('Backup merged with the new clipping entries.')}catch{alert('That backup file is not valid.')}};r.readAsText(f);
+}
+render();
+</script>
+</body></html>
